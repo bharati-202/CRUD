@@ -26,6 +26,47 @@ document.addEventListener('DOMContentLoaded', () => {
     const numBubbles = 75; // Number of bubbles
     const bubbles = [];
 
+    class SmokeParticle {
+        constructor(x, y, bubbleRadius) {
+            // Start particle near the edge of the bubble
+            const angle = Math.random() * Math.PI * 2;
+            this.x = x + (bubbleRadius * 0.8) * Math.cos(angle); // Start slightly inside or on edge
+            this.y = y + (bubbleRadius * 0.8) * Math.sin(angle);
+
+            this.radius = Math.random() * 4 + 2; // Smoke particle radius 2 to 6
+            this.initialRadius = this.radius;
+            this.color = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black
+
+            // Move outwards and slightly upwards
+            this.speedX = (Math.random() - 0.5) * 0.5;
+            this.speedY = -Math.random() * 0.3 - 0.2; // Mostly upwards
+
+            this.life = Math.random() * 40 + 80; // Lifespan: 80-120 frames
+            this.initialLife = this.life;
+        }
+
+        update() {
+            this.life -= 1;
+            this.x += this.speedX;
+            this.y += this.speedY;
+
+            // Fade out and expand
+            const lifeRatio = Math.max(0, this.life / this.initialLife);
+            this.radius = this.initialRadius * (1 + (1 - lifeRatio) * 0.5); // Expand as it dies
+            this.alpha = lifeRatio * 0.3; // Fade out, max alpha 0.3 for subtlety
+        }
+
+        draw() {
+            if (this.life <= 0) return;
+
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            ctx.fillStyle = `rgba(0, 0, 0, ${this.alpha})`;
+            ctx.fill();
+            ctx.closePath();
+        }
+    }
+
     class Bubble {
         constructor() {
             this.x = Math.random() * width;
@@ -34,6 +75,11 @@ document.addEventListener('DOMContentLoaded', () => {
             this.color = colors[Math.floor(Math.random() * colors.length)];
             this.speedX = (Math.random() - 0.5) * 2; // Random horizontal speed (-1 to 1)
             this.speedY = (Math.random() - 0.5) * 2; // Random vertical speed (-1 to 1)
+
+            this.smokeParticles = [];
+            this.smokeEmitInterval = 5; // Emit smoke every 5 frames (approx)
+            this.smokeEmitCounter = 0;
+            this.maxSmokeParticles = 30; // Max smoke particles per bubble
         }
 
         update() {
@@ -49,13 +95,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.speedY *= -1;
                 this.y = Math.max(this.radius, Math.min(height - this.radius, this.y)); // Prevent sticking
             }
+
+            // Update smoke particles
+            this.smokeEmitCounter++;
+            if (this.smokeEmitCounter >= this.smokeEmitInterval && this.smokeParticles.length < this.maxSmokeParticles) {
+                this.smokeParticles.push(new SmokeParticle(this.x, this.y, this.radius));
+                this.smokeEmitCounter = 0;
+            }
+
+            for (let i = this.smokeParticles.length - 1; i >= 0; i--) {
+                this.smokeParticles[i].update();
+                if (this.smokeParticles[i].life <= 0) {
+                    this.smokeParticles.splice(i, 1);
+                }
+            }
         }
 
         draw() {
-            // Save context state
+            // Draw smoke first, so it's behind the bubble's main body and shine
+            this.smokeParticles.forEach(particle => particle.draw());
+
+            // Save context state for bubble drawing
             ctx.save();
 
-            // Shadow
+            // Shadow for the bubble itself
             ctx.shadowColor = 'rgba(0, 0, 0, 0.2)'; // Semi-transparent black shadow
             ctx.shadowBlur = 5;
             ctx.shadowOffsetX = 2;
