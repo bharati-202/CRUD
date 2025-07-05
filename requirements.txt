@@ -1,0 +1,5 @@
+Flask>=2.0
+pandas>=1.0
+matplotlib>=3.0
+# Chart.js is a client-side library, included via CDN, so not needed in requirements.txt
+# sqlite3 is part of the Python standard library, so not needed here.
