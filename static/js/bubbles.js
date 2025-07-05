@@ -52,11 +52,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         draw() {
+            // Save context state
+            ctx.save();
+
+            // Shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)'; // Semi-transparent black shadow
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+
+            // Radial gradient for shine effect
+            // Highlight will be slightly offset to top-left
+            let highlightX = this.x - this.radius * 0.3;
+            let highlightY = this.y - this.radius * 0.3;
+
+            const gradient = ctx.createRadialGradient(
+                highlightX, highlightY, this.radius * 0.05, // Inner circle (highlight point)
+                this.x, this.y, this.radius                 // Outer circle (bubble edge)
+            );
+
+            // Make the highlight brighter/whiter but somewhat transparent
+            // The exact color of the highlight can be tricky.
+            // We'll use a lighter version of the bubble's color or a generic white.
+            // For simplicity, let's try a generic white highlight first.
+            // To make a lighter version of bubble color:
+            // e.g. tinycolor(this.color).lighten(30).setAlpha(0.8).toRgbString();
+            // This would require a color manipulation library.
+            // For now, a semi-transparent white:
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.7)'); // Shine color (center of gradient)
+            gradient.addColorStop(0.7, this.color); // Bubble's actual color (outer part of gradient)
+            // gradient.addColorStop(1, tinycolor(this.color).darken(10).toRgbString()); // Optional: darker edge for more 3D
+
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-            ctx.fillStyle = this.color;
+            ctx.fillStyle = gradient;
             ctx.fill();
-            ctx.closePath();
+
+            // Restore context state to remove shadow for next bubble
+            ctx.restore();
+
+            ctx.closePath(); // Though for fill, closePath isn't strictly necessary here
         }
     }
 
